@@ -1,0 +1,8 @@
+Mode,Transpositions,Notes
+Mode 1 (Whole Tone),2,"C, D, E, F#, G#, A#, C"
+Mode 2 (Octatonic),3,"C, Db, Eb, E, F#, G, A, Bb, C"
+Mode 3,4,"C, D, Eb, E, F#, G, Ab, Bb, B, C"
+Mode 4,6,"C, Db, Eb, F, F#, G, A, Bb, C"
+Mode 5,6,"C, Db, E, F, G, Ab, C"
+Mode 6,6,"C, D, E, F, F#, G#, A#, B, C"
+Mode 7,6,"C, Db, Eb, D, E, F, G, Ab, A, Bb, C"
