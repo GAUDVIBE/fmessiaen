@@ -81,6 +81,58 @@ def parse_notes_from_string(notes_string):
     notes = [normalize_note(n) for n in notes_raw if n.strip()]
     return notes
 
+def get_real_tonics_for_mode(mode_name, notes_set, modes):
+    """
+    Retourne les vraies toniques possibles pour un mode donné.
+    Pour les modes symétriques, teste chaque note pour voir si elle génère le même ensemble.
+    """
+    all_notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    
+    # Patterns des modes de Messiaen (en demi-tons)
+    mode_patterns = {
+        'Mode 1': [2, 2, 2, 2, 2, 2],  # Tons entiers
+        'Mode 2': [1, 2, 1, 2, 1, 2, 1, 2],  # Octatonique
+        'Mode 3': [2, 1, 1, 2, 1, 1, 2, 1, 1],
+        'Mode 4': [1, 1, 3, 1, 1, 1, 3, 1],
+        'Mode 5': [1, 4, 1, 1, 4, 1],
+        'Mode 6': [2, 2, 1, 1, 2, 2, 1, 1],
+        'Mode 7': [1, 1, 1, 2, 1, 1, 1, 1, 2, 1]
+    }
+    
+    # Trouver le pattern du mode
+    pattern = None
+    for mode_key in mode_patterns:
+        if mode_key in mode_name:
+            pattern = mode_patterns[mode_key]
+            break
+    
+    if not pattern:
+        # Fallback: chercher dans le CSV
+        tonics = []
+        for mode_data in modes:
+            if mode_data['mode'] == mode_name and mode_data['notes_set'] == notes_set:
+                tonics.append(mode_data['starting_note'])
+        return sorted(set(tonics))
+    
+    # Tester chaque note du mode pour voir si elle génère le même ensemble
+    valid_tonics = []
+    for test_note in notes_set:
+        if test_note not in all_notes:
+            continue
+        
+        start_idx = all_notes.index(test_note)
+        generated_notes = [test_note]
+        current_idx = start_idx
+        
+        for interval in pattern:
+            current_idx = (current_idx + interval) % 12
+            generated_notes.append(all_notes[current_idx])
+        
+        if set(generated_notes) == notes_set:
+            valid_tonics.append(test_note)
+    
+    return sorted(set(valid_tonics))
+
 def find_matching_modes(input_notes, modes):
     """
     Trouve tous les modes qui contiennent toutes les notes en entrée.
@@ -88,10 +140,22 @@ def find_matching_modes(input_notes, modes):
     """
     input_set = set(input_notes)
     matches = {}
+    exact_matches = {}
     
     for mode_data in modes:
+        mode_set = mode_data['notes_set']
+        
+        # Vérifier si c'est une correspondance exacte
+        if input_set == mode_set:
+            mode_name = mode_data['mode']
+            starting_note = mode_data['starting_note']
+            
+            if mode_name not in exact_matches:
+                exact_matches[mode_name] = []
+            
+            exact_matches[mode_name].append((starting_note, mode_data['notes']))
         # Vérifier si toutes les notes d'entrée sont dans ce mode
-        if input_set.issubset(mode_data['notes_set']):
+        elif input_set.issubset(mode_set):
             mode_name = mode_data['mode']
             starting_note = mode_data['starting_note']
             
@@ -100,7 +164,55 @@ def find_matching_modes(input_notes, modes):
             
             matches[mode_name].append((starting_note, mode_data['notes']))
     
-    return matches
+    return exact_matches, matches
+
+def compare_modes(mode1_str, mode2_str, modes):
+    """
+    Compare deux modes (format: 'C# mode 3' ou 'F Mode 2').
+    Retourne True si les modes sont identiques, False sinon.
+    Prend en compte que chaque note du mode peut être une tonique possible.
+    """
+    def parse_mode_string(mode_str):
+        parts = mode_str.strip().split()
+        if len(parts) < 3:
+            return None, None
+        note = parts[0]
+        mode_num = parts[2] if parts[1].lower() == 'mode' else parts[1]
+        return normalize_note(note), mode_num
+    
+    note1, mode_num1 = parse_mode_string(mode1_str)
+    note2, mode_num2 = parse_mode_string(mode2_str)
+    
+    if not note1 or not note2:
+        return None
+    
+    # Chercher tous les modes correspondant au mode_num1 et mode_num2
+    modes_type1 = []
+    modes_type2 = []
+    
+    for mode_data in modes:
+        mode_name = mode_data['mode']
+        
+        if f'Mode {mode_num1}' in mode_name:
+            modes_type1.append(mode_data)
+        if f'Mode {mode_num2}' in mode_name:
+            modes_type2.append(mode_data)
+    
+    if not modes_type1 or not modes_type2:
+        return None
+    
+    # Vérifier si note1 est dans un des modes de type mode_num1
+    # et si note2 est dans un des modes de type mode_num2
+    # et si ces modes ont les mêmes notes
+    
+    for m1 in modes_type1:
+        if note1 in m1['notes_set']:
+            for m2 in modes_type2:
+                if note2 in m2['notes_set']:
+                    if m1['notes_set'] == m2['notes_set']:
+                        return True
+    
+    return False
 
 def main():
     # Chemin du fichier des modes (dans le même dossier que le script)
@@ -111,15 +223,14 @@ def main():
         print("Usage:")
         print("  fmessiaen <input_notes.csv>          # Depuis un fichier CSV")
         print("  fmessiaen 'A,Db,Bb,C,E,G,Eb,F#'      # Notes directes")
+        print("  fmessiaen 'C# mode 3' 'F mode 3'     # Comparer deux modes")
         print("\nExemple:")
         print("  fmessiaen notes_input.csv")
         print("  fmessiaen 'C,D,E,F#'")
+        print("  fmessiaen 'C# mode 3' 'F mode 3'")
         sys.exit(1)
     
     input_arg = sys.argv[1]
-    
-    print("Analyse des modes de Messiaen\n")
-    print("=" * 60)
     
     # Charger les modes
     if not os.path.exists(modes_csv):
@@ -129,6 +240,21 @@ def main():
         sys.exit(1)
     
     modes = load_modes(modes_csv)
+    
+    # Mode comparaison
+    if len(sys.argv) == 3 and 'mode' in sys.argv[1].lower() and 'mode' in sys.argv[2].lower():
+        result = compare_modes(sys.argv[1], sys.argv[2], modes)
+        if result is None:
+            print("Erreur: modes invalides ou introuvables")
+            sys.exit(1)
+        elif result:
+            print("Oui")
+        else:
+            print("Non")
+        sys.exit(0)
+    
+    print("Analyse des modes de Messiaen\n")
+    print("=" * 60)
     print(f"{len(modes)} transpositions chargées\n")
     
     # Charger les notes (depuis fichier ou chaîne)
@@ -143,32 +269,54 @@ def main():
     
     # Trouver les correspondances
     print("Recherche des modes correspondants...\n")
-    matches = find_matching_modes(input_notes, modes)
+    exact_matches, subset_matches = find_matching_modes(input_notes, modes)
     
     # Afficher les résultats
     print("=" * 60)
     print("RÉSULTATS\n")
     
-    if not matches:
+    if not exact_matches and not subset_matches:
         print("Aucun mode de Messiaen ne correspond à ces notes.")
     else:
         input_set = set(input_notes)
-        for mode_name, mode_list in sorted(matches.items()):
-            starting_notes_str = '/'.join([start for start, _ in mode_list])
-            print(f"{starting_notes_str} {mode_name}")
+        
+        # Afficher les correspondances exactes en premier
+        if exact_matches:
+            print("Correspondances exactes:\n")
+            for mode_name, mode_list in sorted(exact_matches.items()):
+                mode_notes = mode_list[0][1]
+                mode_set = set(mode_notes)
+                real_tonics = get_real_tonics_for_mode(mode_name, mode_set, modes)
+                
+                tonics_str = '/'.join(real_tonics)
+                print(f"{tonics_str} {mode_name}")
+                print(f"  Notes du mode    : {', '.join(mode_notes)}")
+                print()
+        
+        # Afficher les correspondances partielles
+        if subset_matches:
+            if exact_matches:
+                print("\nCorrespondances partielles:\n")
             
-            # Utiliser les notes du premier mode (toutes les transpositions ont les mêmes notes)
-            mode_notes = mode_list[0][1]
-            mode_set = set(mode_notes)
-            
-            common = input_set & mode_set
-            missing_from_mode = input_set - mode_set
-            missing_from_input = mode_set - input_set
-            
-            print(f"  Notes communes   : {', '.join(sorted(common))}")
-            if missing_from_input:
-                print(f"  Notes manquantes : {', '.join(sorted(missing_from_input))}")
-            print()
+            for mode_name, mode_list in sorted(subset_matches.items()):
+                mode_notes = mode_list[0][1]
+                mode_set = set(mode_notes)
+                real_tonics = get_real_tonics_for_mode(mode_name, mode_set, modes)
+                
+                if real_tonics:
+                    tonics_str = '/'.join(real_tonics)
+                    print(f"{tonics_str} {mode_name}")
+                else:
+                    starting_notes_str = '/'.join([start for start, _ in mode_list])
+                    print(f"{starting_notes_str} {mode_name}")
+                
+                common = input_set & mode_set
+                missing_from_input = mode_set - input_set
+                
+                print(f"  Notes communes   : {', '.join(sorted(common))}")
+                if missing_from_input:
+                    print(f"  Notes manquantes : {', '.join(sorted(missing_from_input))}")
+                print()
     
     print("=" * 60)
 
