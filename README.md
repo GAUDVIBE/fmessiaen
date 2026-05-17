@@ -37,20 +37,20 @@ fmessiaen 'C,D,E,F#'
 
 ```bash
 $ fmessiaen 'C,D,E,F#'
-🎵 Analyse des modes de Messiaen
+Analyse des modes de Messiaen
 
 ============================================================
-✅ 84 transpositions chargées
+84 transpositions chargées
 
-📝 Analyse des notes directes...
-✅ Notes en entrée : C, D, E, F#
+Analyse des notes directes...
+Notes en entrée : C, D, E, F#
 
-🔍 Recherche des modes correspondants...
+Recherche des modes correspondants...
 
 ============================================================
-📊 RÉSULTATS
+RÉSULTATS
 
-✅ C/F# Mode 1 (Whole Tone)
+C/F# Mode 1 (Whole Tone)
 
 ============================================================
 ```

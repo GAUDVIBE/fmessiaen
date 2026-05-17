@@ -38,7 +38,7 @@ def normalize_note(note):
     if note in ENHARMONIC_MAP:
         return ENHARMONIC_MAP[note]
     else:
-        print(f"⚠️  Note inconnue : {note}")
+        print(f"Note inconnue : {note}")
         return note
 
 def load_modes(csv_file):
@@ -118,43 +118,43 @@ def main():
     
     input_arg = sys.argv[1]
     
-    print("🎵 Analyse des modes de Messiaen\n")
+    print("Analyse des modes de Messiaen\n")
     print("=" * 60)
     
     # Charger les modes
     if not os.path.exists(modes_csv):
-        print(f"❌ Fichier {modes_csv} introuvable.")
-        print(f"   Assurez-vous que messiaen_modes_all_transpositions.csv")
-        print(f"   est dans le même dossier que fmessiaen")
+        print(f"Fichier {modes_csv} introuvable.")
+        print(f"Assurez-vous que messiaen_modes_all_transpositions.csv")
+        print(f"est dans le même dossier que fmessiaen")
         sys.exit(1)
     
     modes = load_modes(modes_csv)
-    print(f"✅ {len(modes)} transpositions chargées\n")
+    print(f"{len(modes)} transpositions chargées\n")
     
     # Charger les notes (depuis fichier ou chaîne)
     if os.path.exists(input_arg):
-        print(f"📂 Chargement des notes depuis {input_arg}...")
+        print(f"Chargement des notes depuis {input_arg}...")
         input_notes = load_input_notes(input_arg)
     else:
-        print(f"📝 Analyse des notes directes...")
+        print(f"Analyse des notes directes...")
         input_notes = parse_notes_from_string(input_arg)
     
-    print(f"✅ Notes en entrée : {', '.join(input_notes)}\n")
+    print(f"Notes en entrée : {', '.join(input_notes)}\n")
     
     # Trouver les correspondances
-    print("🔍 Recherche des modes correspondants...\n")
+    print("Recherche des modes correspondants...\n")
     matches = find_matching_modes(input_notes, modes)
     
     # Afficher les résultats
     print("=" * 60)
-    print("📊 RÉSULTATS\n")
+    print("RÉSULTATS\n")
     
     if not matches:
-        print("❌ Aucun mode de Messiaen ne correspond à ces notes.")
+        print("Aucun mode de Messiaen ne correspond à ces notes.")
     else:
         for mode_name, starting_notes in sorted(matches.items()):
             starting_notes_str = '/'.join(starting_notes)
-            print(f"✅ {starting_notes_str} {mode_name}")
+            print(f"{starting_notes_str} {mode_name}")
     
     print("\n" + "=" * 60)
 
