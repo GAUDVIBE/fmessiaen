@@ -40,7 +40,7 @@ $ fmessiaen 'C,D,E,F#'
 Analyse des modes de Messiaen
 
 ============================================================
-84 transpositions chargées
+33 transpositions chargées
 
 Analyse des notes directes...
 Notes en entrée : C, D, E, F#
@@ -50,7 +50,13 @@ Recherche des modes correspondants...
 ============================================================
 RÉSULTATS
 
-C/F# Mode 1 (Whole Tone)
+C Mode 1 (Whole Tone)
+  Notes communes   : C, D, E, F#
+  Notes manquantes : A#, G#
+
+C/D Mode 3
+  Notes communes   : C, D, E, F#
+  Notes manquantes : A#, B, D#, G, G#
 
 ============================================================
 ```

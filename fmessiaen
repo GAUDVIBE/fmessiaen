@@ -84,7 +84,7 @@ def parse_notes_from_string(notes_string):
 def find_matching_modes(input_notes, modes):
     """
     Trouve tous les modes qui contiennent toutes les notes en entrée.
-    Retourne un dictionnaire {mode_name: [starting_notes]}.
+    Retourne un dictionnaire {mode_name: [(starting_note, mode_notes)]}.
     """
     input_set = set(input_notes)
     matches = {}
@@ -98,7 +98,7 @@ def find_matching_modes(input_notes, modes):
             if mode_name not in matches:
                 matches[mode_name] = []
             
-            matches[mode_name].append(starting_note)
+            matches[mode_name].append((starting_note, mode_data['notes']))
     
     return matches
 
@@ -152,11 +152,25 @@ def main():
     if not matches:
         print("Aucun mode de Messiaen ne correspond à ces notes.")
     else:
-        for mode_name, starting_notes in sorted(matches.items()):
-            starting_notes_str = '/'.join(starting_notes)
+        input_set = set(input_notes)
+        for mode_name, mode_list in sorted(matches.items()):
+            starting_notes_str = '/'.join([start for start, _ in mode_list])
             print(f"{starting_notes_str} {mode_name}")
+            
+            # Utiliser les notes du premier mode (toutes les transpositions ont les mêmes notes)
+            mode_notes = mode_list[0][1]
+            mode_set = set(mode_notes)
+            
+            common = input_set & mode_set
+            missing_from_mode = input_set - mode_set
+            missing_from_input = mode_set - input_set
+            
+            print(f"  Notes communes   : {', '.join(sorted(common))}")
+            if missing_from_input:
+                print(f"  Notes manquantes : {', '.join(sorted(missing_from_input))}")
+            print()
     
-    print("\n" + "=" * 60)
+    print("=" * 60)
 
 if __name__ == '__main__':
     main()
