@@ -4,8 +4,9 @@ Script pour identifier les modes de Messiaen à partir d'une liste de notes.
 """
 
 import csv
-import sys
 import os
+import re
+import sys
 
 # Forcer UTF-8 sur stdout pour eviter les caracteres mal encodes dans cmd
 # Windows (codepage 850/1252 par defaut). No-op sur les terminaux deja UTF-8.
@@ -108,13 +109,16 @@ def get_real_tonics_for_mode(mode_name, notes_set, modes):
         'Mode 6': [2, 2, 1, 1, 2, 2, 1, 1],
         'Mode 7': [1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
         'Maj (add b6)': [2, 2, 1, 2, 1, 1, 2, 1],  # Majeure + b6 ajoute
-        'Slonimsky 194': [1, 2, 1, 1, 1, 1, 1, 4]  # Slonimsky Thesaurus #194
+        'Slonimsky 194': [1, 2, 1, 1, 1, 1, 1, 4],  # Slonimsky Thesaurus #194
+        'Slonimsky 1': [1, 5, 1, 5]                  # Slonimsky #1 (symetrique tritone)
     }
     
-    # Trouver le pattern du mode
+    # Trouver le pattern du mode.
+    # Match avec word-boundary pour eviter "Slonimsky 1" qui matcherait
+    # accidentellement "Slonimsky 194" via substring nu.
     pattern = None
     for mode_key in mode_patterns:
-        if mode_key in mode_name:
+        if re.match(rf'^{re.escape(mode_key)}\b', mode_name):
             pattern = mode_patterns[mode_key]
             break
     

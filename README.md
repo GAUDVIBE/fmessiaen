@@ -23,7 +23,7 @@ fmessiaen 'C,D,E,F#'
   + autres gammes ajoutées au fil du temps (cf section [Modes pris en charge](#modes-pris-en-charge))
 - Support de l'équivalence enharmonique (Db = C#, etc.)
 - Deux formats d'entrée : fichier CSV ou chaîne de caractères
-- Base de données : 57 transpositions au total
+- Base de données : 63 transpositions au total
 - **Correspondances approximatives** : si une note d'entrée n'est dans
   aucun mode, propose les modes les plus proches avec la note de
   substitution la plus proche en demi-tons (et qui complète idéalement
@@ -42,6 +42,7 @@ fmessiaen 'C,D,E,F#'
 | Mode 7 | 6 | 1-1-1-2-1-1-1-1-2-1 |
 | **Maj (add b6)** | **12** | **2-2-1-2-1-1-2-1** — gamme majeure + sixte mineure ajoutée |
 | **Slonimsky 194** | **12** | **1-2-1-1-1-1-1-4** — issue du *Thesaurus of Scales and Melodic Patterns* (1947) |
+| **Slonimsky 1** | **6** | **1-5-1-5** — tetraton symétrique par tritone (C, Db, F#, G + transpositions) |
 
 Pour ajouter un mode : éditer `messiaen_modes.csv` (1 ligne) +
 `messiaen_modes_all_transpositions.csv` (N lignes selon le nombre de
