@@ -133,38 +133,94 @@ def get_real_tonics_for_mode(mode_name, notes_set, modes):
     
     return sorted(set(valid_tonics))
 
-def find_matching_modes(input_notes, modes):
+ALL_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+def semitone_distance(note_a, note_b):
+    """Distance minimale en demi-tons (chromatique circulaire) entre deux notes."""
+    if note_a not in ALL_NOTES or note_b not in ALL_NOTES:
+        return None
+    idx_a = ALL_NOTES.index(note_a)
+    idx_b = ALL_NOTES.index(note_b)
+    raw_diff = abs(idx_a - idx_b)
+    return min(raw_diff, 12 - raw_diff)
+
+def find_closest_note(off_note, mode_set, input_set=None):
     """
-    Trouve tous les modes qui contiennent toutes les notes en entrée.
-    Retourne un dictionnaire {mode_name: [(starting_note, mode_notes)]}.
+    Pour une note hors mode, retourne (note_la_plus_proche, distance_en_demi_tons).
+
+    Priorise les notes du mode encore NON jouees (mode_set - input_set):
+    la substitution est plus utile quand elle introduit une note manquante
+    qu'une note deja presente dans l'input.
+    Fallback : toute note du mode si l'input couvre deja tout le mode.
+    Tie-break final : index chromatique croissant (stabilite).
+    """
+    pool = mode_set - input_set if input_set is not None else set(mode_set)
+    if not pool:
+        pool = set(mode_set)
+    candidates = []
+    for m in pool:
+        d = semitone_distance(off_note, m)
+        if d is not None:
+            candidates.append((d, ALL_NOTES.index(m), m))
+    if not candidates:
+        return None, None
+    candidates.sort()
+    return candidates[0][2], candidates[0][0]
+
+def find_matching_modes(input_notes, modes, approx_max_off=2, approx_top_n=5):
+    """
+    Trouve les modes correspondant aux notes en entree.
+    Retourne (exact_matches, subset_matches, approximate_matches):
+      - exact_matches    : input_set == mode_set
+      - subset_matches   : input_set strictement inclus dans mode_set
+      - approximate_matches : input_set deborde sur 1..approx_max_off notes
+        hors mode. Top N classes par (moins de hors-gamme, plus de notes communes).
+        Chaque approx contient les substitutions suggerees (note hors -> note la plus proche).
     """
     input_set = set(input_notes)
     matches = {}
     exact_matches = {}
-    
+    approx_pool = []
+
     for mode_data in modes:
         mode_set = mode_data['notes_set']
-        
-        # Vérifier si c'est une correspondance exacte
+        mode_name = mode_data['mode']
+        starting_note = mode_data['starting_note']
+
         if input_set == mode_set:
-            mode_name = mode_data['mode']
-            starting_note = mode_data['starting_note']
-            
-            if mode_name not in exact_matches:
-                exact_matches[mode_name] = []
-            
-            exact_matches[mode_name].append((starting_note, mode_data['notes']))
-        # Vérifier si toutes les notes d'entrée sont dans ce mode
+            exact_matches.setdefault(mode_name, []).append((starting_note, mode_data['notes']))
         elif input_set.issubset(mode_set):
-            mode_name = mode_data['mode']
-            starting_note = mode_data['starting_note']
-            
-            if mode_name not in matches:
-                matches[mode_name] = []
-            
-            matches[mode_name].append((starting_note, mode_data['notes']))
-    
-    return exact_matches, matches
+            matches.setdefault(mode_name, []).append((starting_note, mode_data['notes']))
+        else:
+            off_notes = input_set - mode_set
+            if 0 < len(off_notes) <= approx_max_off:
+                common = input_set & mode_set
+                substitutions = []
+                for off in sorted(off_notes):
+                    closest, dist = find_closest_note(off, mode_set, input_set)
+                    substitutions.append((off, closest, dist))
+                approx_pool.append({
+                    'mode_data': mode_data,
+                    'common': common,
+                    'off_notes': off_notes,
+                    'substitutions': substitutions,
+                })
+
+    # Trier les approximate : moins de hors-gamme d'abord, puis plus de notes communes.
+    approx_pool.sort(key=lambda a: (len(a['off_notes']), -len(a['common'])))
+
+    # Dedupliquer par (mode_name, notes_set) - sinon Mode 1 apparait 2x via ses transpositions.
+    seen = set()
+    approximate_matches = []
+    for a in approx_pool:
+        key = (a['mode_data']['mode'], frozenset(a['mode_data']['notes_set']))
+        if key not in seen:
+            seen.add(key)
+            approximate_matches.append(a)
+        if len(approximate_matches) >= approx_top_n:
+            break
+
+    return exact_matches, matches, approximate_matches
 
 def compare_modes(mode1_str, mode2_str, modes):
     """
@@ -269,55 +325,87 @@ def main():
     
     # Trouver les correspondances
     print("Recherche des modes correspondants...\n")
-    exact_matches, subset_matches = find_matching_modes(input_notes, modes)
-    
+    exact_matches, subset_matches, approximate_matches = find_matching_modes(input_notes, modes)
+
     # Afficher les résultats
     print("=" * 60)
     print("RÉSULTATS\n")
-    
-    if not exact_matches and not subset_matches:
-        print("Aucun mode de Messiaen ne correspond à ces notes.")
+
+    if not exact_matches and not subset_matches and not approximate_matches:
+        print("Aucun mode de Messiaen ne correspond a ces notes, meme approximativement.")
     else:
         input_set = set(input_notes)
-        
-        # Afficher les correspondances exactes en premier
+
+        # Correspondances exactes
         if exact_matches:
             print("Correspondances exactes:\n")
             for mode_name, mode_list in sorted(exact_matches.items()):
                 mode_notes = mode_list[0][1]
                 mode_set = set(mode_notes)
                 real_tonics = get_real_tonics_for_mode(mode_name, mode_set, modes)
-                
+
                 tonics_str = '/'.join(real_tonics)
                 print(f"{tonics_str} {mode_name}")
                 print(f"  Notes du mode    : {', '.join(mode_notes)}")
                 print()
-        
-        # Afficher les correspondances partielles
+
+        # Correspondances partielles (toutes les notes input dans le mode)
         if subset_matches:
             if exact_matches:
                 print("\nCorrespondances partielles:\n")
-            
+
             for mode_name, mode_list in sorted(subset_matches.items()):
                 mode_notes = mode_list[0][1]
                 mode_set = set(mode_notes)
                 real_tonics = get_real_tonics_for_mode(mode_name, mode_set, modes)
-                
+
                 if real_tonics:
                     tonics_str = '/'.join(real_tonics)
                     print(f"{tonics_str} {mode_name}")
                 else:
                     starting_notes_str = '/'.join([start for start, _ in mode_list])
                     print(f"{starting_notes_str} {mode_name}")
-                
+
                 common = input_set & mode_set
                 missing_from_input = mode_set - input_set
-                
+
                 print(f"  Notes communes   : {', '.join(sorted(common))}")
                 if missing_from_input:
                     print(f"  Notes manquantes : {', '.join(sorted(missing_from_input))}")
                 print()
-    
+
+        # Correspondances approximatives (1+ notes input hors mode, substitutions suggerees)
+        if approximate_matches:
+            if exact_matches or subset_matches:
+                print("\nCorrespondances approximatives:\n")
+            else:
+                print("Correspondances approximatives (aucun mode ne contient toutes les notes):\n")
+
+            for approx in approximate_matches:
+                mode_data = approx['mode_data']
+                mode_name = mode_data['mode']
+                mode_notes = mode_data['notes']
+                mode_set = mode_data['notes_set']
+                real_tonics = get_real_tonics_for_mode(mode_name, mode_set, modes)
+
+                if real_tonics:
+                    tonics_str = '/'.join(real_tonics)
+                    print(f"{tonics_str} {mode_name}")
+                else:
+                    print(f"{mode_data['starting_note']} {mode_name}")
+
+                if approx['common']:
+                    print(f"  Notes communes   : {', '.join(sorted(approx['common']))}")
+                # Substitutions : note hors-gamme -> note la plus proche dans le mode
+                for off, closest, dist in approx['substitutions']:
+                    unit = 'demi-ton' if dist == 1 else 'demi-tons'
+                    print(f"  Hors-gamme       : {off} -> {closest} ({dist} {unit})")
+                # Notes du mode encore non jouees (info pour completer la gamme)
+                still_missing = mode_set - input_set
+                if still_missing:
+                    print(f"  Notes manquantes : {', '.join(sorted(still_missing))}")
+                print()
+
     print("=" * 60)
 
 if __name__ == '__main__':

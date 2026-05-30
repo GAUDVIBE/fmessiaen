@@ -22,7 +22,11 @@ fmessiaen 'C,D,E,F#'
 - Analyse des 7 modes de Messiaen avec toutes leurs transpositions
 - Support de l'équivalence enharmonique (Db = C#, etc.)
 - Deux formats d'entrée : fichier CSV ou chaîne de caractères
-- Base de données complète des modes avec 84 transpositions
+- Base de données complète des modes avec 33 transpositions
+- **Correspondances approximatives** : si une note d'entrée n'est dans
+  aucun mode, propose les modes les plus proches avec la note de
+  substitution la plus proche en demi-tons (et qui complète idéalement
+  le mode plutôt qu'une note déjà jouée).
 
 ## Fichiers inclus
 
