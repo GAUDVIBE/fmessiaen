@@ -7,6 +7,13 @@ import csv
 import sys
 import os
 
+# Forcer UTF-8 sur stdout pour eviter les caracteres mal encodes dans cmd
+# Windows (codepage 850/1252 par defaut). No-op sur les terminaux deja UTF-8.
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass  # Python < 3.7
+
 # Table d'équivalence enharmonique (toutes les notes en dièses)
 ENHARMONIC_MAP = {
     'C': 'C',
