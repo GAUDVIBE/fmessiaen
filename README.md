@@ -20,13 +20,32 @@ fmessiaen 'C,D,E,F#'
 ## Fonctionnalités
 
 - Analyse des 7 modes de Messiaen avec toutes leurs transpositions
+  + autres gammes ajoutées au fil du temps (cf section [Modes pris en charge](#modes-pris-en-charge))
 - Support de l'équivalence enharmonique (Db = C#, etc.)
 - Deux formats d'entrée : fichier CSV ou chaîne de caractères
-- Base de données complète des modes avec 33 transpositions
+- Base de données : 45 transpositions au total
 - **Correspondances approximatives** : si une note d'entrée n'est dans
   aucun mode, propose les modes les plus proches avec la note de
   substitution la plus proche en demi-tons (et qui complète idéalement
   le mode plutôt qu'une note déjà jouée).
+
+## Modes pris en charge
+
+| Mode | Transpositions | Pattern (demi-tons) |
+|---|---|---|
+| Mode 1 (Whole Tone) | 2 | 2-2-2-2-2-2 |
+| Mode 2 (Octatonic) | 3 | 1-2-1-2-1-2-1-2 |
+| Mode 3 | 4 | 2-1-1-2-1-1-2-1-1 |
+| Mode 4 | 6 | 1-1-3-1-1-1-3-1 |
+| Mode 5 | 6 | 1-4-1-1-4-1 |
+| Mode 6 | 6 | 2-2-1-1-2-2-1-1 |
+| Mode 7 | 6 | 1-1-1-2-1-1-1-1-2-1 |
+| **Maj (add b6)** | **12** | **2-2-1-2-1-1-2-1** — gamme majeure + sixte mineure ajoutée |
+
+Pour ajouter un mode : éditer `messiaen_modes.csv` (1 ligne) +
+`messiaen_modes_all_transpositions.csv` (N lignes selon le nombre de
+transpositions distinctes), et optionnellement le `mode_patterns`
+dans `fmessiaen` pour un affichage plus clair des toniques.
 
 ## Fichiers inclus
 
