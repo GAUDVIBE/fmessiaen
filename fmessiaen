@@ -107,7 +107,8 @@ def get_real_tonics_for_mode(mode_name, notes_set, modes):
         'Mode 5': [1, 4, 1, 1, 4, 1],
         'Mode 6': [2, 2, 1, 1, 2, 2, 1, 1],
         'Mode 7': [1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
-        'Maj (add b6)': [2, 2, 1, 2, 1, 1, 2, 1]  # Majeure + b6 ajoute
+        'Maj (add b6)': [2, 2, 1, 2, 1, 1, 2, 1],  # Majeure + b6 ajoute
+        'Slonimsky 194': [1, 2, 1, 1, 1, 1, 1, 4]  # Slonimsky Thesaurus #194
     }
     
     # Trouver le pattern du mode
